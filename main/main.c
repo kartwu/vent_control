@@ -44,5 +44,5 @@
 
 void app_main(void)
 {
-    printf("hello world");
+    printf("hello world!\n");
 }
