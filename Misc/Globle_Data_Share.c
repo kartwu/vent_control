@@ -31,6 +31,9 @@ void temperatureMonitoring_control(void * params){
 void HMI(void *params)
 {
   Vent_machine * myMachine = (Vent_machine *) params;
+    //从*params传递过来的是void *,新定义本task局部变量为pointer型，需要把 void * 型cast to 变量的type_define相同后，才能传递。
+  uint32_t pointADD = (int )myMachine; //新定义变量，用于检查前一步声明的指针的里面指明的地址。
+  ESP_LOGI("HMI"," myMachine adds is %x", pointADD); 
   while(true){
   ESP_LOGW("HMI","ventMachine name from XXXX is %s\n",myMachine->Name );
   strcpy(myMachine->Name, "QBDZ-001");
@@ -41,6 +44,15 @@ void HMI(void *params)
 }
 void app_main(void)
 {
+
+        int *ptr ;   // 声明一个指针
+    int myNumber =3; //声明一个变量
+    ptr = &myNumber;  //把变量的地址取出，赋值给指针变量，作为指针的地址
+    ESP_LOGI(TAG,"*ptr = %d \n",*ptr); // log 指针变量的值
+    ESP_LOGI(TAG,"Adds of *ptr is %x \n", (int)ptr); //LOG 指针变量的地址，需要 cast to “int”，才符合 “%x” 的形式要求。
+    Vent_machine  ventMachine;          //声明struct
+    uint32_t ventMachineAdds = (int) &ventMachine;  //新声明变量，取struct的地址，并cast to “int” 后，赋值给变量
+    ESP_LOGI("Main","ventMachineAdd is %x. \n",ventMachineAdds); //log 变量
      Vent_machine  ventMachine;
     strcpy(ventMachine.Name, "QBDZ-001");
     ventMachine.Fan_Power_Control = 1;
