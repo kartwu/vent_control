@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2020-11-30T06:47:18.471Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36" etag="BYTkJbFCqGTNwEl_pZNi" version="13.10.4" type="github">
+<mxfile host="app.diagrams.net" modified="2020-11-30T13:13:34.632Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36" etag="fQAXM-uaL9FzC89-uQ7t" version="13.10.4" type="github">
   <diagram id="aIBNMCLB5vegAtX76ae7" name="Page-1">
     <mxGraphModel dx="1662" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -37,7 +37,7 @@
         <mxCell id="1z75fBFgBHhC1uhvndQV-80" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="1z75fBFgBHhC1uhvndQV-3" target="1z75fBFgBHhC1uhvndQV-4" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1z75fBFgBHhC1uhvndQV-3" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;font style=&quot;font-size: 12px&quot;&gt;&amp;nbsp;Init sensorReadingQueue&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;font style=&quot;font-size: 12px&quot;&gt;Init VentFan(default)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
+        <mxCell id="1z75fBFgBHhC1uhvndQV-3" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;font style=&quot;font-size: 12px&quot;&gt;&amp;nbsp;Init&amp;nbsp;&lt;/font&gt;&lt;span style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px&quot;&gt;readingSemaphore&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;font style=&quot;font-size: 12px&quot;&gt;Init VentFan(default)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="397.51" y="893.13" width="170" height="56.87" as="geometry" />
         </mxCell>
         <mxCell id="qpSUApoE_brRs-mtpVLS-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="1z75fBFgBHhC1uhvndQV-4" target="qpSUApoE_brRs-mtpVLS-1" edge="1">
@@ -55,7 +55,7 @@
         <mxCell id="1z75fBFgBHhC1uhvndQV-7" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center ; text-decoration: underline&quot;&gt;&lt;strong&gt;&lt;strong&gt;SensorReading Task&lt;/strong&gt;&amp;nbsp;&lt;br&gt;&lt;/strong&gt;&lt;/p&gt;&lt;hr&gt;&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" parent="1" vertex="1">
           <mxGeometry x="445" y="660" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="1z75fBFgBHhC1uhvndQV-8" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;&lt;span style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace&quot;&gt;SensorReadingQueueSend&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
+        <mxCell id="1z75fBFgBHhC1uhvndQV-8" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;readingSemaphoreGive&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="377.51" y="90" width="180" height="40" as="geometry" />
         </mxCell>
         <mxCell id="1z75fBFgBHhC1uhvndQV-9" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center ; text-decoration: underline&quot;&gt;&lt;strong&gt;&lt;strong&gt;Waiting Sensor&amp;nbsp;&lt;/strong&gt;&lt;/strong&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center ; text-decoration: underline&quot;&gt;&lt;strong&gt;&lt;strong&gt;Reading Task&lt;/strong&gt;&amp;nbsp;&lt;br&gt;&lt;/strong&gt;&lt;/p&gt;&lt;hr&gt;&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" parent="1" vertex="1">
@@ -67,8 +67,8 @@
         <mxCell id="1z75fBFgBHhC1uhvndQV-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="1z75fBFgBHhC1uhvndQV-15" target="1z75fBFgBHhC1uhvndQV-13" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1z75fBFgBHhC1uhvndQV-10" value="QUEUEReceived" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" parent="1" vertex="1">
-          <mxGeometry x="880" y="582.5" width="140" height="47.5" as="geometry" />
+        <mxCell id="1z75fBFgBHhC1uhvndQV-10" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;readingSemaphoreTake&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="837.5" y="583.9" width="225" height="65" as="geometry" />
         </mxCell>
         <mxCell id="1z75fBFgBHhC1uhvndQV-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="1z75fBFgBHhC1uhvndQV-11" target="1z75fBFgBHhC1uhvndQV-15" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -98,7 +98,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="1z75fBFgBHhC1uhvndQV-21" value="MQTT client start" style="whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
-          <mxGeometry x="837.5" y="70" width="122.5" height="60" as="geometry" />
+          <mxGeometry x="836.25" y="70" width="122.5" height="60" as="geometry" />
         </mxCell>
         <mxCell id="1z75fBFgBHhC1uhvndQV-65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="1z75fBFgBHhC1uhvndQV-23" target="1z75fBFgBHhC1uhvndQV-67" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -123,7 +123,7 @@
         <mxCell id="1z75fBFgBHhC1uhvndQV-33" value="Y" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
           <mxGeometry x="960" y="545" width="20" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="1z75fBFgBHhC1uhvndQV-35" value="Sensor data Publish&lt;br&gt;(Tin, Tout,Status)&amp;nbsp;" style="whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
+        <mxCell id="1z75fBFgBHhC1uhvndQV-35" value="Sensor data Publish&lt;br&gt;(Tin, Tout,&lt;br&gt;Fan_Power_Status)&amp;nbsp;" style="whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="1007.5" y="70" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="1z75fBFgBHhC1uhvndQV-66" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="1z75fBFgBHhC1uhvndQV-37" target="1z75fBFgBHhC1uhvndQV-43" edge="1">
@@ -235,8 +235,8 @@
         <mxCell id="qpSUApoE_brRs-mtpVLS-17" value="Y" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
           <mxGeometry x="340" y="443.75" width="20" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="qpSUApoE_brRs-mtpVLS-18" value="GPIO Init&lt;br&gt;Tin:Temp before heat exchanger&lt;br&gt;Tout: Temp after heat exchanger" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
-          <mxGeometry x="364.38" y="584.5" width="196.25" height="57.5" as="geometry" />
+        <mxCell id="qpSUApoE_brRs-mtpVLS-18" value="GPIO Init&lt;br&gt;Tin:Temp before heat exchanger&lt;br&gt;Tout: Temp after heat exchanger&lt;br&gt;Fan_Power_Status:&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="364.38" y="584.5" width="196.25" height="65.5" as="geometry" />
         </mxCell>
         <mxCell id="qpSUApoE_brRs-mtpVLS-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="qpSUApoE_brRs-mtpVLS-20" target="ufi4V1U7AW8aj_9xYBH5-3" edge="1">
           <mxGeometry relative="1" as="geometry">
