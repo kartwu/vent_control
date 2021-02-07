@@ -1,5 +1,9 @@
 menu "SGP30 Example"
 
+config eCO2_Alarm_PPM
+    int "eCO2_Alarm_PPM"
+    default 1000
+    
 config I2C_SPEED
     int "I2C speed in kHz"
     default 100
@@ -12,4 +16,21 @@ config I2C_SCL
     int "I2C SCL port"
     default 17
 
+config ESP_WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+        SSID (network name) for the example to connect to.
+
+config ESP_WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+    help
+        WiFi password (WPA or WPA2) for the example to use.
+
+config ESP_MAXIMUM_RETRY
+    int "Max retry number"
+    default 5
+    help
+        Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
 endmenu

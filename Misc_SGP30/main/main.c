@@ -1,4 +1,5 @@
-
+/* 210203,尝试整合mqtt_aiot上报数据到本程序
+*/
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -10,7 +11,21 @@
 
 #include "SGP30.h"
 
-#define LED_PIN 22                // 用LED闪烁快慢指示eCO2是否超标(1000ppm),核查22已经被i2c用了，暂时换成27
+//从mqtt_aiot增加的库
+#include <string.h>
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include <unistd.h>
+#include <pthread.h>
+#include "aiot_state_api.h"
+#include "aiot_sysdep_api.h"
+#include "aiot_mqtt_api.h"
+
+#define LED_PIN 22                // 用LED闪烁快慢指示eCO2是否超标(1000ppm)。
 bool eCO2_Alarm = false;
 
 #define NVS_BASE_NAME "storage"
@@ -27,30 +42,349 @@ bool eCO2_Alarm = false;
 #define CHECK_ERROR(x) if(x != ESP_OK) {return x;}
 #endif
 
+//从mqtt_aiot增加的变量
+xSemaphoreHandle cloudUploadReadySemaphore;         //准备好开始向云端上报数据的Semaphore
+#define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
+#define EXAMPLE_ESP_WIFI_PASS      "66665555" //CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY  //尝试重连Wifi最大次数 
+static EventGroupHandle_t s_wifi_event_group;
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT      BIT1
+static const char *TAG = "SGP30_Aiot";
+char *product_key       = "a1m81zhi11W";    //三元组，以后在menuconfig中设置
+char *device_name       = "THSD_Data";
+char *device_secret     = "32kSDyw5lXLbpFsIgHai8NgSCl7RwwGV";
+char pub_topic[100];        //报文topic
+char pub_payload[250];      //报文Payload
+extern aiot_sysdep_portfile_t g_aiot_sysdep_portfile;
+extern const char *ali_ca_cert;
+static pthread_t g_mqtt_process_thread;
+static pthread_t g_mqtt_recv_thread;
+static uint8_t g_mqtt_process_thread_running = 0;
+static uint8_t g_mqtt_recv_thread_running = 0;
+static int s_retry_num = 0;
+
+/* Wifi Event Handler */
+static void Wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {          // 由esp_wifi_start()触发。
+        esp_wifi_connect();      
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {  //由esp_wifi_connect()连接尝试失败触发。也可能由esp_wifi_stop()触发。
+            if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+            ESP_LOGI(TAG, "to retry to connect to the AP");
+            int ret = esp_wifi_connect();
+            s_retry_num++;            
+            ESP_LOGW(__func__,"wifi_connect() return %d.",ret);
+        } else {
+            ESP_LOGI(TAG,"Try connect to AP fail. ");   //WIFI_FAIL_BIT bit to be set!
+            //此处删除例程的xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT); 用最大等待时间获得Wifi连接失败的判断
+        }
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {     //由esp_wifi_connect()连接尝试成功触发。
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        s_retry_num = EXAMPLE_ESP_MAXIMUM_RETRY;                                //只要本次操作成功连接，就设置。目的是避免在执行Wifi_stop()的时候，重新触发WIFI_EVENT_STA_DISCONNECTED，再次尝试connect。
+        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    }    
+}
+
+int32_t demo_state_logcb(int32_t code, char *message)
+{
+    printf("%s", message);
+    return 0;
+}
+
+void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void *userdata)
+{
+    switch (event->type) {
+        /* SDK因为用户调用了aiot_mqtt_connect()接口, 与mqtt服务器建立连接已成功 */
+        case AIOT_MQTTEVT_CONNECT: {
+            printf("AIOT_MQTTEVT_CONNECT.\n");
+            /* TODO: 处理SDK建连成功, 不可以在这里调用耗时较长的阻塞函数 */
+        }
+        break;
+
+        /* SDK因为网络状况被动断连后, 自动发起重连已成功 */
+        case AIOT_MQTTEVT_RECONNECT: {
+            printf("AIOT_MQTTEVT_RECONNECT\n");
+            /* TODO: 处理SDK重连成功, 不可以在这里调用耗时较长的阻塞函数 */
+        }
+        break;
+
+        /* SDK因为网络的状况而被动断开了连接, network是底层读写失败, heartbeat是没有按预期得到服务端心跳应答 */
+        case AIOT_MQTTEVT_DISCONNECT: {
+            char *cause = (event->data.disconnect == AIOT_MQTTDISCONNEVT_NETWORK_DISCONNECT) ? ("network disconnect") :
+                          ("heartbeat disconnect");
+            printf("AIOT_MQTTEVT_DISCONNECT: %s\n", cause);
+            /* TODO: 处理SDK被动断连, 不可以在这里调用耗时较长的阻塞函数 */
+        }
+        break;
+        default: {
+        }
+    }
+}
+
+void demo_mqtt_default_recv_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
+{
+    switch (packet->type) {
+        case AIOT_MQTTRECV_HEARTBEAT_RESPONSE: {
+            printf("heartbeat response\n");
+            /* TODO: 处理服务器对心跳的回应, 一般不处理 */
+        }
+        break;
+
+        case AIOT_MQTTRECV_SUB_ACK: {
+            printf("sub_ack, res: -0x%04X, packet id: %d, max qos: %d\n",
+                   -packet->data.sub_ack.res, packet->data.sub_ack.packet_id, packet->data.sub_ack.max_qos);
+            /* TODO: 处理服务器对订阅请求的回应, 一般不处理 */
+        }
+        break;
+
+        case AIOT_MQTTRECV_PUB: {
+            printf("pub, qos: %d, topic: %.*s\n", packet->data.pub.qos, packet->data.pub.topic_len, packet->data.pub.topic);
+            printf("pub, payload: %.*s\n", packet->data.pub.payload_len, packet->data.pub.payload);
+            /* TODO: 处理服务器下发的业务报文 */
+        }
+        break;
+
+        case AIOT_MQTTRECV_PUB_ACK: {
+            printf("pub_ack, packet id: %d\n", packet->data.pub_ack.packet_id);
+            /* TODO: 处理服务器对QoS1上报消息的回应, 一般不处理 */
+        }
+        break;
+
+        default: {
+
+        }
+    }
+}
+
+void *demo_mqtt_process_thread(void *args)
+{
+    int32_t res = STATE_SUCCESS;
+    while (g_mqtt_process_thread_running) {
+        res = aiot_mqtt_process(args);
+        if (res == STATE_USER_INPUT_EXEC_DISABLED) {
+            break;
+        }
+        sleep(1);
+    }
+    return NULL;
+}
+
+void *demo_mqtt_recv_thread(void *args)
+{
+    int32_t res = STATE_SUCCESS;
+
+    while (g_mqtt_recv_thread_running) {
+        res = aiot_mqtt_recv(args);
+        if (res < STATE_SUCCESS) {
+            if (res == STATE_USER_INPUT_EXEC_DISABLED) {
+                break;
+            }
+            sleep(1);
+        }
+    }
+    return NULL;
+}
+
+int linkkit_main(void)
+{
+    int32_t     res = STATE_SUCCESS;
+    void       *mqtt_handle = NULL;
+    char       *url = "iot-as-mqtt.cn-shanghai.aliyuncs.com"; /* 阿里云平台上海站点的域名后缀 */
+    char        host[100] = {0}; /* 用这个数组拼接设备连接的云平台站点全地址, 规则是 ${productKey}.iot-as-mqtt.cn-shanghai.aliyuncs.com */
+    uint16_t    port = 443;      /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
+    aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
+
+    /* 配置SDK的底层依赖 */
+    aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
+    /* 配置SDK的日志输出 */
+    aiot_state_set_logcb(demo_state_logcb);
+
+    /* 创建SDK的安全凭据, 用于建立TLS连接 */
+    memset(&cred, 0, sizeof(aiot_sysdep_network_cred_t));
+    cred.option = AIOT_SYSDEP_NETWORK_CRED_SVRCERT_CA;  /* 使用RSA证书校验MQTT服务端 */
+    cred.max_tls_fragment = 16384; /* 最大的分片长度为16K, 其它可选值还有4K, 2K, 1K, 0.5K */
+    cred.sni_enabled = 1;                               /* TLS建连时, 支持Server Name Indicator */
+    cred.x509_server_cert = ali_ca_cert;                 /* 用来验证MQTT服务端的RSA根证书 */
+    cred.x509_server_cert_len = strlen(ali_ca_cert);     /* 用来验证MQTT服务端的RSA根证书长度 */
+
+    /* 创建1个MQTT客户端实例并内部初始化默认参数 */
+    mqtt_handle = aiot_mqtt_init();
+    if (mqtt_handle == NULL) {
+        printf("aiot_mqtt_init failed\n");
+        return -1;
+    }
+
+    snprintf(host, 100, "%s.%s", product_key, url);
+    /* 配置MQTT服务器地址 */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HOST, (void *)host);
+    /* 配置MQTT服务器端口 */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_PORT, (void *)&port);
+    /* 配置设备productKey */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_PRODUCT_KEY, (void *)product_key);
+    /* 配置设备deviceName */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_DEVICE_NAME, (void *)device_name);
+    /* 配置设备deviceSecret */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_DEVICE_SECRET, (void *)device_secret);
+    /* 配置网络连接的安全凭据, 上面已经创建好了 */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_NETWORK_CRED, (void *)&cred);
+    /* 配置MQTT默认消息接收回调函数 */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECV_HANDLER, (void *)demo_mqtt_default_recv_handler);
+    /* 配置MQTT事件回调函数 */
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_EVENT_HANDLER, (void *)demo_mqtt_event_handler);
+
+    /* 与服务器建立MQTT连接 */
+    res = aiot_mqtt_connect(mqtt_handle);
+    if (res < STATE_SUCCESS) {
+        /* 尝试建立连接失败, 销毁MQTT实例, 回收资源 */
+        aiot_mqtt_deinit(&mqtt_handle);
+        printf("aiot_mqtt_connect failed: -0x%04X\n", -res);
+        return -1;
+    }
+
+    /* MQTT 发布消息功能示例, 请根据自己的业务需求进行使用 */
+    {
+        //利用传感器Task(本程序是 sgpTask(void* pvParams))中组件的Topic和Payload上报MQTT消息
+        res = aiot_mqtt_pub(mqtt_handle, pub_topic, (uint8_t *)pub_payload, strlen(pub_payload), 0);
+        if (res < 0) {
+            printf("aiot_mqtt_sub failed, res: -0x%04X\n", -res);
+            return -1;
+        }
+    }
+
+    /* 创建一个单独的线程, 专用于执行aiot_mqtt_process, 它会自动发送心跳保活, 以及重发QoS1的未应答报文 */
+    g_mqtt_process_thread_running = 1;
+    res = pthread_create(&g_mqtt_process_thread, NULL, demo_mqtt_process_thread, mqtt_handle);
+    if (res < 0) {
+        printf("pthread_create demo_mqtt_process_thread failed: %d\n", res);
+        return -1;
+    }
+
+    /* 创建一个单独的线程用于执行aiot_mqtt_recv, 它会循环收取服务器下发的MQTT消息, 并在断线时自动重连 */
+    g_mqtt_recv_thread_running = 1;
+    
+    res = pthread_create(&g_mqtt_recv_thread, NULL, demo_mqtt_recv_thread, mqtt_handle);
+    if (res < 0) {
+        printf("pthread_create demo_mqtt_recv_thread failed: %d\n", res);
+        return -1;
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10000)); //等待一段时间，收取云反馈或指令
+
+    /* 断开MQTT连接, 一般不会运行到这里 */
+    ESP_LOGI(TAG, "aiot_mqtt_disconnect()");
+    res = aiot_mqtt_disconnect(mqtt_handle);
+    if (res < STATE_SUCCESS) {
+        aiot_mqtt_deinit(&mqtt_handle);
+        printf("aiot_mqtt_disconnect failed: -0x%04X\n", -res);
+        return -1;
+    }
+
+    /* 销毁MQTT实例, 一般不会运行到这里 */
+    ESP_LOGI(TAG, "aiot_mqtt_deinit()");
+    res = aiot_mqtt_deinit(&mqtt_handle);
+    if (res < STATE_SUCCESS) {
+        printf("aiot_mqtt_deinit failed: -0x%04X\n", -res);
+        return -1;
+    }
+    ESP_LOGI(TAG, "to Stop Threads!");
+    g_mqtt_process_thread_running = 0;
+    g_mqtt_recv_thread_running = 0;
+    pthread_join(g_mqtt_process_thread, NULL);
+    pthread_join(g_mqtt_recv_thread, NULL);
+    return 0;
+}
+
+void wifi_aiot_start(void){
+    ESP_LOGI(TAG, "wifi_init_start.");
+    s_retry_num = 0;                        //连接失败时，尝试重连次数复位。
+    ESP_ERROR_CHECK(esp_wifi_start() );  // luanch WIFI_EVENT_STA_START
+    /* 等待(WIFI_CONNECTED_BIT) or timeout（连接尝试失败）The bit is set by Wifi_event_handler() (see above) */
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+            WIFI_CONNECTED_BIT,         //取消  | WIFI_FAIL_BIT, 用timeout 来处理等待时间
+            pdTRUE,                     //函数返回前本bit 复位，原例程为pdFALSE。否则影响下一次 wifi_aiot_start(void)
+            pdFALSE,                    // Don't wait for both bits, either bit will do.
+            pdMS_TO_TICKS(5000));       // Timeout设置。 原例程portMAX_DELAY);
+
+    /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
+     * happened. */
+    if (bits & WIFI_CONNECTED_BIT) {            //在这里继续aiot_mqtt 的 init 和 Pub 操作,结束后关闭Wifi。
+        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+        ESP_LOGI(TAG, "Start linkkit_main and wait for return.");
+        int ret = linkkit_main();
+        if (ret == ESP_OK){
+            ESP_LOGI(TAG, "Job done! To dowifi_stop()");
+            ESP_ERROR_CHECK(esp_wifi_stop());
+            }
+        else{
+            ESP_LOGW(TAG, "linkkit_main return error = %d. To do Wifi_stop()", ret);
+            ESP_ERROR_CHECK(esp_wifi_stop());
+            }
+    } else {
+        ESP_LOGE(TAG, "xEventGroupWaitBits timeout! Failed to connect to SSID:%s, password:%s.",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+        ESP_ERROR_CHECK(esp_wifi_stop());
+        ESP_LOGW(TAG,"TODO somthing to record failed to upload data to cloud."); 
+    }
+}
+
+void cloud_Upload(void *params){                        //程序开始云上报task的入口
+    s_wifi_event_group = xEventGroupCreate();
+
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default()); 
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &Wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &Wifi_event_handler, NULL));
+
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .password = EXAMPLE_ESP_WIFI_PASS
+        },
+    };
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    while (true){
+        if (xSemaphoreTake(cloudUploadReadySemaphore,portMAX_DELAY)) {
+            ESP_LOGI(TAG, "Start wifi and Aiot handling.");
+            wifi_aiot_start();
+        }
+    }
+
+}
 
 static void sgpTask(void* pvParams) {
     while(true) {
-        esp_err_t err;
-        if((err = sgp30_ReadData()) == ESP_OK) {
+        for(int i = 0; i < 30; i++){
+            esp_err_t err;
+            if((err = sgp30_ReadData()) == ESP_OK) {
             ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm",
                      sgp30_Data.tVoC, sgp30_Data.eCO2);
-        } else {
+            } else {
             ESP_LOGE(__func__, "SGP READ ERROR:: 0x%04X", err);
-        }
-        if(sgp30_Data.eCO2 > 1000){
-            eCO2_Alarm = true;
-        }else
-        {
+            }
+            if(sgp30_Data.eCO2 > CONFIG_eCO2_Alarm_PPM){
+                eCO2_Alarm = true;
+            }else
+            {
             eCO2_Alarm = false;
+            }
+            vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
         }
-        
-        vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
+        sprintf(pub_topic,"/sys/%s/%s/thing/event/property/post", product_key, device_name); 
+        sprintf(pub_payload,"{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"%s\":%d}}","eCO2",sgp30_Data.eCO2); //TODO:增加物模型
+        ESP_LOGI (__func__, "Pub payload ready. Give semaphore\n");
+        xSemaphoreGive(cloudUploadReadySemaphore);
     }
     vTaskDelete(NULL);
 }
-
-
-
 
 static void sgpBaselineTask(void* pvParams) {
     static uint8_t baseline_set_nvs_count = 0;  //更新Baseline的次数
@@ -208,9 +542,11 @@ void app_main() {
             ESP_LOGI(__func__, "Set Baseline from NVS to SGP30 OK!: tVocBase: %x eCO2Base: %x", tVocBase, eCo2Base);
         }
     }
+    cloudUploadReadySemaphore = xSemaphoreCreateBinary(); 
 
     xTaskCreate(sgpTask, "sgpTask", 4096, NULL, 5, NULL);
     xTaskCreate(sgpBaselineTask, "sgpBaselineTask", 4096, NULL, 5, NULL);
+    xTaskCreate(cloud_Upload, "cloud_Upload", 1024 * 4, NULL, 5, NULL);
     xTaskCreate(HMI, "HMI", 1024 * 2, NULL, 5, NULL);
 
 }
