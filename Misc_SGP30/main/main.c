@@ -25,13 +25,35 @@
 #include "aiot_sysdep_api.h"
 #include "aiot_mqtt_api.h"
 
+//Nimble BLE 功能增加的库和变量, idf.py menuconfig 中enable nimble
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"  //host stack
+#include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
+
+/*自己指定的，用于和手机（小程序）ble 通讯的UUID。按要求倒序排列 */
+#define BLE_THSD_SERVICE_UUID BLE_UUID128_DECLARE(0x19, 0x00, 0x08, 0x01, 0x11, 0x91, 0x00, 0x10, 0x60, 0x74, 0x27, 0x06, 0x06, 0x01, 0x11, 0x91)
+//Service UUID: "91110106-0627-7460-1000-911101080019"
+#define BLE_THSD_CHAR_COMMAND_UUID    BLE_UUID128_DECLARE(0x19, 0x00, 0x08, 0x01, 0x11, 0x91, 0x01, 0x00, 0x60, 0x74, 0x27, 0x06, 0x06, 0x01, 0x11, 0x91)
+// 指令Charicater UUID: "91110106-0627-7460-0001-911101080019"  
+#define BLE_THSD_CHAR_DATA_UUID   BLE_UUID128_DECLARE(0x19, 0x00, 0x08, 0x01, 0x11, 0x91, 0x02, 0x00, 0x60, 0x74, 0x27, 0x06, 0x06, 0x01, 0x11, 0x91)
+// 数据Charicater "91110106-0627-7460-0002-911101080019"
+
+/* 210214:尝试调试成最简单的ble Write功能，服务于手机微信小程序定期读取*/
+#define DEVICE_NAME "THSD-CK"
+char formatted_ble_data[100];       //输出到小程序时，使用的组织成JSON格式的数据。
+uint8_t wqj_ble_addr_type;          //flag。程序过程用，不用关心
+void ble_app_advertise(void);       //编译用，提前声明，函数在调用函数的后面。
+// BLE setting end
+
+/*SGP30 settings*/
 #define LED_PIN 22                // 用LED闪烁快慢指示eCO2是否超标(1000ppm)。
 bool eCO2_Alarm = false;
-
 #define NVS_BASE_NAME "storage"
 #define SGP_TVOC_BASE_KEY "SGP_TVOC"
 #define SGP_ECO2_BASE_KEY "SGP_ECO2"
-
 #ifndef REAL_MS
 #define REAL_MS(n) ((n) / portTICK_PERIOD_MS)
 #endif
@@ -41,8 +63,9 @@ bool eCO2_Alarm = false;
 #ifndef CHECK_ERROR
 #define CHECK_ERROR(x) if(x != ESP_OK) {return x;}
 #endif
+//SGP30 setting end
 
-//从mqtt_aiot增加的变量
+/* mqtt_aiot settings */
 xSemaphoreHandle cloudUploadReadySemaphore;         //准备好开始向云端上报数据的Semaphore
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      "66665555" //CONFIG_ESP_WIFI_PASSWORD
@@ -51,11 +74,11 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 static const char *TAG = "SGP30_Aiot";
-char *product_key       = "a1m81zhi11W";    //三元组，以后在menuconfig中设置
-char *device_name       = "THSD_Data";
-char *device_secret     = "32kSDyw5lXLbpFsIgHai8NgSCl7RwwGV";
-char pub_topic[100];        //报文topic
-char pub_payload[250];      //报文Payload
+char *product_key       = "a1bdhbK4VTZ";    //三元组，以后在menuconfig中设置
+char *device_name       = "W8QeK6QpTYNQ3ad65alD";
+char *device_secret     = "b44fcf6c61e825929a5d5e6ed611d71e";
+char pub_topic[100];                        //报文topic
+char pub_payload[250];                      //报文Payload
 extern aiot_sysdep_portfile_t g_aiot_sysdep_portfile;
 extern const char *ali_ca_cert;
 static pthread_t g_mqtt_process_thread;
@@ -63,26 +86,125 @@ static pthread_t g_mqtt_recv_thread;
 static uint8_t g_mqtt_process_thread_running = 0;
 static uint8_t g_mqtt_recv_thread_running = 0;
 static int s_retry_num = 0;
+// mqtt aiot setting end
 
-/* Wifi Event Handler */
+/* BLE functions start*/
+/* cb 函数，当gat_svcs中的对应characteristics被Read的时候，执行 */
+static int receive_client_command(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg){
+    printf("receive command from client %.*s. \n", ctxt->om->om_len, ctxt->om->om_data);
+    //TODO： 后续处理，赋值给控制
+    return 0;
+}
+static int update_client_data(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg){
+    os_mbuf_append(ctxt->om ,&formatted_ble_data ,strlen(formatted_ble_data));
+    ESP_LOGI(__func__,"update sensor data.");
+    return 0;
+}
+
+/* 声明一个gatt service,可包含多个services, 每个service包含多个characteristics,每个characteristics都有其UUID和access_cb */
+static const struct ble_gatt_svc_def gat_svcs[] = {  
+    {       /*第一个 Service */
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_THSD_SERVICE_UUID, 
+        .characteristics = (struct ble_gatt_chr_def[]){
+            {   //第一个 Characteristic: 
+                .uuid = BLE_THSD_CHAR_COMMAND_UUID,
+                .flags = BLE_GATT_CHR_F_WRITE,
+                .access_cb = receive_client_command,
+            },
+            {   //第二个 Characteristic
+                .uuid = BLE_THSD_CHAR_DATA_UUID, 
+                .flags = BLE_GATT_CHR_F_READ, 
+                .access_cb = update_client_data,
+            },{0}}
+    },{0}     //表示Service list结束
+};
+
+/*  ble_gap_adv_start 时注册的不同 event 的cb 函数*/
+static int ble_gap_event(struct ble_gap_event *event, void * arg){
+    switch (event->type) {
+    case BLE_GAP_EVENT_CONNECT:
+        ESP_LOGI("GAP","BLE_GAP_EVENT_CONNECT %s",event->connect.status == 0? "OK":"Failed");
+        if(event->connect.status != 0){
+            ble_app_advertise();
+        }
+        break;
+    case BLE_GAP_EVENT_DISCONNECT:
+         ESP_LOGI("GAP","BLE_GAP_EVENT_DISCONNECT");
+         ble_app_advertise();
+        break;    
+    case BLE_GAP_EVENT_ADV_COMPLETE:
+         ESP_LOGI("GAP","BLE_GAP_EVENT_ADV_COMPLETE");
+         ble_app_advertise();
+        break;
+    case BLE_GAP_EVENT_SUBSCRIBE:
+        ESP_LOGI("GAP","BLE_GAP_EVENT_SUBSCRIBE");
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+/* 开始advertise所需要的设置 单独成函数是为了多次调用*/
+void ble_app_advertise(void){
+    struct ble_hs_adv_fields fields;
+    memset(&fields,0, sizeof(fields) );
+    fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_DISC_LTD;
+    fields.tx_pwr_lvl_is_present = true;
+    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;  //Power level
+    fields.name = (uint8_t *) ble_svc_gap_device_name();
+    fields.name_len = strlen(ble_svc_gap_device_name());
+    fields.name_is_complete = true;
+    ble_gap_adv_set_fields(&fields);
+    struct ble_gap_adv_params adv_params;   // = (struct ble_gap_adv_params){0};  //?新建adv的参数？
+    memset(&adv_params,0,sizeof(adv_params));
+    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
+    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+    ble_gap_adv_start(wqj_ble_addr_type, NULL, BLE_HS_FOREVER, &adv_params, ble_gap_event, NULL);
+}
+
+void ble_app_on_sync(void){
+    ble_hs_id_infer_auto(0,&wqj_ble_addr_type);     //自动生成地址类型,不需要关心
+    ble_app_advertise();
+}
+/* nimble_port_freertos_init 出来的task*/
+void host_task(void *param){
+    nimble_port_run();      //2
+}
+/* 把ble 初始化所需步骤整合到一起，简化程序app_main()*/
+void thsd_ble_init(){
+    esp_nimble_hci_and_controller_init();  //HCI: Host Controller Interface
+    nimble_port_init();
+    ble_svc_gap_device_name_set(DEVICE_NAME);  
+    ble_svc_gap_init();
+    ble_svc_gatt_init();
+    ble_gatts_count_cfg(gat_svcs);
+    ble_gatts_add_svcs(gat_svcs);
+    ble_hs_cfg.sync_cb = ble_app_on_sync;  //3.  Bluetooth Host main configuration structure “host stack?"
+    nimble_port_freertos_init(host_task);   //第一步1
+}
+// BLE functions end
+
+/* mqtt functions start*/
 static void Wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {          // 由esp_wifi_start()触发。
+        ESP_LOGI(__func__,"WIFI_EVENT_STA_START. To try connect to Wifi"); 
         esp_wifi_connect();      
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {  //由esp_wifi_connect()连接尝试失败触发。也可能由esp_wifi_stop()触发。
+            ESP_LOGI(__func__,"WIFI_EVENT_STA_DISCONNECTED. "); 
             if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-            ESP_LOGI(TAG, "to retry to connect to the AP");
+            ESP_LOGI(__func__, "Retry connect to Wifi AP");
             int ret = esp_wifi_connect();
             s_retry_num++;            
             ESP_LOGW(__func__,"wifi_connect() return %d.",ret);
-        } else {
-            ESP_LOGI(TAG,"Try connect to AP fail. ");   //WIFI_FAIL_BIT bit to be set!
+            } 
             //此处删除例程的xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT); 用最大等待时间获得Wifi连接失败的判断
-        }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {     //由esp_wifi_connect()连接尝试成功触发。
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(__func__, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = EXAMPLE_ESP_MAXIMUM_RETRY;                                //只要本次操作成功连接，就设置。目的是避免在执行Wifi_stop()的时候，重新触发WIFI_EVENT_STA_DISCONNECTED，再次尝试connect。
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }    
@@ -271,10 +393,10 @@ int linkkit_main(void)
         return -1;
     }
 
-    vTaskDelay(pdMS_TO_TICKS(10000)); //等待一段时间，收取云反馈或指令
+    vTaskDelay(pdMS_TO_TICKS(60000)); //等待一段时间，收取云反馈或指令
 
     /* 断开MQTT连接, 一般不会运行到这里 */
-    ESP_LOGI(TAG, "aiot_mqtt_disconnect()");
+    ESP_LOGI(__func__, "aiot_mqtt_disconnect()");
     res = aiot_mqtt_disconnect(mqtt_handle);
     if (res < STATE_SUCCESS) {
         aiot_mqtt_deinit(&mqtt_handle);
@@ -283,13 +405,13 @@ int linkkit_main(void)
     }
 
     /* 销毁MQTT实例, 一般不会运行到这里 */
-    ESP_LOGI(TAG, "aiot_mqtt_deinit()");
+    ESP_LOGI(__func__, "aiot_mqtt_deinit()");
     res = aiot_mqtt_deinit(&mqtt_handle);
     if (res < STATE_SUCCESS) {
         printf("aiot_mqtt_deinit failed: -0x%04X\n", -res);
         return -1;
     }
-    ESP_LOGI(TAG, "to Stop Threads!");
+    ESP_LOGI(__func__, "to Stop Threads!");
     g_mqtt_process_thread_running = 0;
     g_mqtt_recv_thread_running = 0;
     pthread_join(g_mqtt_process_thread, NULL);
@@ -298,7 +420,7 @@ int linkkit_main(void)
 }
 
 void wifi_aiot_start(void){
-    ESP_LOGI(TAG, "wifi_init_start.");
+    ESP_LOGI(__func__, "wifi_init_start.");
     s_retry_num = 0;                        //连接失败时，尝试重连次数复位。
     ESP_ERROR_CHECK(esp_wifi_start() );  // luanch WIFI_EVENT_STA_START
     /* 等待(WIFI_CONNECTED_BIT) or timeout（连接尝试失败）The bit is set by Wifi_event_handler() (see above) */
@@ -311,23 +433,24 @@ void wifi_aiot_start(void){
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {            //在这里继续aiot_mqtt 的 init 和 Pub 操作,结束后关闭Wifi。
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
-        ESP_LOGI(TAG, "Start linkkit_main and wait for return.");
+        ESP_LOGI(__func__, "connected to ap SSID:%s password:%s",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+        ESP_LOGI(__func__, "Start linkkit_main and wait for return.");
         int ret = linkkit_main();
         if (ret == ESP_OK){
-            ESP_LOGI(TAG, "Job done! To dowifi_stop()");
+            ESP_LOGI(__func__, "Job done! To dowifi_stop()");
             ESP_ERROR_CHECK(esp_wifi_stop());
             }
         else{
-            ESP_LOGW(TAG, "linkkit_main return error = %d. To do Wifi_stop()", ret);
+            ESP_LOGW(__func__, "linkkit_main return error = %d. To do Wifi_stop()", ret);
             ESP_ERROR_CHECK(esp_wifi_stop());
             }
     } else {
-        ESP_LOGE(TAG, "xEventGroupWaitBits timeout! Failed to connect to SSID:%s, password:%s.",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+        ESP_LOGE(__func__, "xEventGroupWaitBits timeout! Failed to connect to SSID:%s, password:%s.",EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
         ESP_ERROR_CHECK(esp_wifi_stop());
-        ESP_LOGW(TAG,"TODO somthing to record failed to upload data to cloud."); 
+        ESP_LOGW(__func__,"TODO somthing to record failed to upload data to cloud."); 
     }
 }
+// mqtt aiot functions end
 
 void cloud_Upload(void *params){                        //程序开始云上报task的入口
     s_wifi_event_group = xEventGroupCreate();
@@ -353,16 +476,15 @@ void cloud_Upload(void *params){                        //程序开始云上报t
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     while (true){
         if (xSemaphoreTake(cloudUploadReadySemaphore,portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Start wifi and Aiot handling.");
+            ESP_LOGI(__func__, "Start wifi and Aiot handling.");
             wifi_aiot_start();
         }
     }
 
 }
-
+/*根据功能变动的程序，在这里组织aiot pub topic&payload，组织BLE read callback 调用的输出*/
 static void sgpTask(void* pvParams) {
-    while(true) {
-        for(int i = 0; i < 30; i++){
+    for(int i = 0; i < 30; i++){   //开机前15秒数据无效，先执行30秒的开机循环，等待SPG30进入正常工作状态
             esp_err_t err;
             if((err = sgp30_ReadData()) == ESP_OK) {
             ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm",
@@ -378,10 +500,28 @@ static void sgpTask(void* pvParams) {
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
         }
+    while(true) {
         sprintf(pub_topic,"/sys/%s/%s/thing/event/property/post", product_key, device_name); 
-        sprintf(pub_payload,"{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"%s\":%d}}","eCO2",sgp30_Data.eCO2); //TODO:增加物模型
+        sprintf(pub_payload,"{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"%s\":%d,\"%s\":%d}}","eCO2",sgp30_Data.eCO2,"voc",sgp30_Data.tVoC); //TODO:增加物模型
         ESP_LOGI (__func__, "Pub payload ready. Give semaphore\n");
         xSemaphoreGive(cloudUploadReadySemaphore);
+        for(int i = 0; i < 60 * 30; i++){  //初次上报数据后，每半小时上报一次数据。
+            esp_err_t err;
+            if((err = sgp30_ReadData()) == ESP_OK) {
+            ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm",
+                     sgp30_Data.tVoC, sgp30_Data.eCO2);
+                     sprintf(formatted_ble_data,"{\"tVoC\":%d,\"eCO2\":%d}",sgp30_Data.tVoC, sgp30_Data.eCO2);
+            } else {
+            ESP_LOGE(__func__, "SGP READ ERROR:: 0x%04X", err);
+            }
+            if(sgp30_Data.eCO2 > CONFIG_eCO2_Alarm_PPM){
+                eCO2_Alarm = true;
+            }else
+            {
+            eCO2_Alarm = false;
+            }
+            vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
+        }
     }
     vTaskDelete(NULL);
 }
@@ -465,8 +605,8 @@ void HMI(void *params){
           gpio_set_level(LED_PIN, true);
           LED_Status = true;
         }
-        ESP_LOGI(__func__, "LED_Status: %d, eCO2_alarm: %d", LED_Status, eCO2_Alarm);
-        vTaskDelay(pdMS_TO_TICKS(1000 / (1 + eCO2_Alarm *2) ));
+        //ESP_LOGI(__func__, "LED_Status: %d, eCO2_alarm: %d", LED_Status, eCO2_Alarm);
+        vTaskDelay(pdMS_TO_TICKS(2000 / (1 + eCO2_Alarm *3) ));
       }
 
 }
@@ -543,7 +683,9 @@ void app_main() {
         }
     }
     cloudUploadReadySemaphore = xSemaphoreCreateBinary(); 
-
+// BLE initial
+    thsd_ble_init();
+// BLE end
     xTaskCreate(sgpTask, "sgpTask", 4096, NULL, 5, NULL);
     xTaskCreate(sgpBaselineTask, "sgpBaselineTask", 4096, NULL, 5, NULL);
     xTaskCreate(cloud_Upload, "cloud_Upload", 1024 * 4, NULL, 5, NULL);
