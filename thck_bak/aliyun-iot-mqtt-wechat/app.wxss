@@ -1,0 +1,100 @@
+/**app.wxss**/
+page {
+  background-color: #f8f8f8;
+} 
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  box-sizing: border-box;
+  border-top:1px solid #e5e5e5;
+} 
+
+.view-header {
+  display: flex;
+  flex-direction: row;
+  font-weight:bold;
+  align-items: left;
+  width: 50%;
+  padding: 10rpx;
+  border-bottom:1px solid #e5e5e5;
+}
+.view-button{
+  display: flex;
+  flex-direction: row;
+  width: 45%;
+  font-weight: bold;
+}
+.view-status1{
+  display: flex;
+  flex-direction: row;
+  width: 50%;
+  font-weight: bold ;
+  font-size: small;
+  color: rgb(224, 7, 7);
+  background-color: gainsboro
+}
+.view-status2{
+  display: flex;
+  flex-direction: row;
+  width: 50%;
+  font-weight: bold ;
+  color: rgb(224, 7, 7);
+  background-color: gainsboro
+}
+.view-flex-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 6rpx;
+}
+.label-device{
+  width: 350rpx;
+  font-size: 13pt;
+  align-items: center;
+  text-align: left;
+  padding: 10rpx;
+  color: gray;
+}
+.input-device {
+  width: 80%;
+  height: 100%;
+  border:none;
+  border-bottom:1rpx solid #757575;
+}
+.input-things {
+  width:20%;
+  height: 100%;
+  border:none;
+  border-bottom:1rpx solid #757575;
+}
+
+.label-property{
+  width: 10%;
+  font-size: 13pt;
+  align-items: center;
+  text-align: left;
+  padding: 10rpx;
+  color: gray;
+}
+.text-help {
+  font-size: small;
+  color: rgb(10, 194, 240);
+  padding: 20rpx;
+  position:fixed;
+  bottom:0;
+  display:flex;
+  width:100%;
+  justify-content:center;
+}
+.icon-sign1 {
+  width: 100rpx;
+  align-items: flex-end;
+}
+.icon-sign2 {
+  width: 250rpx;
+  align-items: flex-end;
+}

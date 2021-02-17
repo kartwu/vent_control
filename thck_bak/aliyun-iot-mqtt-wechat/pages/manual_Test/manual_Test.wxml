@@ -1,0 +1,93 @@
+<!--manual_Test.wxml-->
+<view class="container">
+  <view class="view-flex-row" >
+    <view class="view-header">BLE手动终端</view>
+    <image class="icon-sign1" mode="widthFix" src="../img/TheTime-logo.png"  ></image>
+        <image class="icon-sign2" mode="widthFix" src="../img/Evolving_logo.png"  ></image>
+  </view>
+  
+  <view class="view-flex-row">
+    <button bindtap="thsd_ble_On_Off" type="primary" class ="view-button" loading="{{searching}}">{{is_ble_connected?"断开 BLE 设备:":" 搜索 BLE 设备:"}}</button>
+    <button  type="warn" class="view-button" >{{thsd_DeviceName}}</button>
+  </view>
+
+  <view class="view-flex-row">
+      <button  bindtap="toggleReadBLEData" type="primary" class="view-button" >{{is_Start_Data_Read?"停止读取数据":"开始读取数据"}}</button>
+      <button bindtap="thsdBLESend" type="primary" class ="view-button">发送特征指令</button>
+  </view>  
+
+<!--   <view class="view-flex-row">
+
+        <button bindtap="stopReadBLEData">停止测量</button>
+  </view> -->
+
+  <view class="view-flex-row" >
+    <view class="view-header">结果显示</view>
+  </view>
+
+  <view class="view-flex-row" style="flex-direction:row;">
+     <view  class="flex-title" style="flex-direction:column">
+      <view>项目</view>
+    </view>
+    <view  class="flex-title" style="flex-direction:column">
+      <view>数值</view>
+    </view>
+    <view  class="flex-title" style="flex-direction:column">
+      <view>单位</view>
+    </view>
+  </view>
+
+<!-- 显示五个可能接收到的检测参数 -->
+  <view class="view-flex-row">  
+    <text class="flex-item" >{{display_Result[0].name}}</text>
+    <text class="flex-item" >{{display_Result[0].value}}</text>
+    <text class="flex-item">{{display_Result[0].unit}}</text>
+  </view>
+
+
+  <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[1].name}}</text>
+    <text class="flex-item">{{display_Result[1].value}}</text>
+    <text class="flex-item">{{display_Result[1].unit}}</text>
+  </view>
+
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[2].name}}</text>
+    <text class="flex-item">{{display_Result[2].value}}</text>
+    <text class="flex-item">{{display_Result[2].unit}}</text>
+  </view>
+
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[3].name}}</text>
+    <text class="flex-item">{{display_Result[3].value}}</text>
+    <text class="flex-item">{{display_Result[3].unit}}</text>
+  </view>
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[4].name}}</text>
+    <text class="flex-item">{{display_Result[4].value}}</text>
+    <text class="flex-item">{{display_Result[4].unit}}</text>
+  </view>
+
+
+
+
+
+
+  <view class="view-flex-row" >
+    <view class="view-header">阿里云数据</view>
+  </view>
+
+
+  <view class="view-flex-row">
+        <button bindtap="thsd_mqtt_On_Off_Line" type="primary" loading="{{searching}}">{{is_MQTT_Connected?"下线":"上线"}} </button>
+        <button  type="primary" bindtap="thsd_MQTT_Post">上报</button>
+        <button bindtap="onTouchHelp">帮助</button>
+  </view>
+ 
+
+  <view style='margin-top: 20rpx;'>
+    <view class='text-log'>
+      <text>上报数据：{{aly_upload_count}} 条</text>
+    </view>
+  </view>  
+</view>

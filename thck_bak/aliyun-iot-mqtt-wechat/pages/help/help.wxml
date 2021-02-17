@@ -1,0 +1,29 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="view-flex-row" >
+    <view class="view-header">使用帮助</view>
+    <image class="icon-sign1" mode="widthFix" src="../img/TheTime-logo.png"  ></image>
+        <image class="icon-sign2" mode="widthFix" src="../img/Evolving_logo.png"  ></image>
+  </view >
+  <view class="help-view-flex-row">
+    <text>1、打开专用测试仪。 </text>
+  </view>
+  <view class="view-flex-row">
+   <image mode="aspectFit" src="../img/device_info.jpg"></image>
+  </view>
+  <view class="help-view-flex-row">
+    <text font-size:9pt >2、打开手机蓝牙。 </text>
+  </view>
+  <view class="help-view-flex-row">
+    <text >3、点击“搜索BLE设备” 开始接收数据。 </text>
+  </view>
+    <view class="help-view-flex-row">
+    <text >4、点击“断开BLE设备” 停止接收数据。 </text>
+  </view>
+  <view class="help-view-flex-row">
+    <text >5、点击“上线”按钮连接云数据。 </text>
+  </view>
+  <view class="help-view-flex-row">
+    <text >6、点击“上报”存储数据。 </text>
+  </view>
+</view>

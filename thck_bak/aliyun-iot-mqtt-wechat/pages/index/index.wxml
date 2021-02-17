@@ -1,0 +1,80 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="view-flex-row" >
+    <view class="view-header">BLE自动终端</view>
+    <image class="icon-sign1" mode="widthFix" src="../img/TheTime-logo.png"  ></image>
+        <image class="icon-sign2" mode="widthFix" src="../img/Evolving_logo.png"  ></image>
+  </view>
+  
+  <view class="view-flex-row">
+    <button bindtap="openBluetoothAdapter" type="primary" class ="view-button" loading="{{searching}}">{{is_ble_connected?"已连接到:":" 搜索 BLE 设备:"}}</button>
+    <button  type="warn" class="view-button" >{{thsd_DeviceName}}</button>
+  </view>
+
+  <view class="view-flex-row">
+      <button bindtap="closeBluetoothAdapter" type="primary" class="view-button">断开 BLE 连接</button>
+      <button type="warn" class ="view-button" loading="{{searching}}">{{data_Received?"已收到数据:":"等待数据"}}</button>
+  </view>  
+
+  <view class="view-flex-row">
+    <button class="upload-btn">压力:</button>
+    <text class="input-things">{{airPressure}} </text>
+    <text class="label-property">HPa</text>
+    <button class="upload-btn">湿度:</button>
+    <text class="input-things">{{relativeHumidity}} </text>
+    <text class="label-property"> %</text>
+  </view>
+  <view class="view-flex-row">
+    <button class="upload-btn">温度:</button>
+    <text class="input-things">{{objectTemperature}} </text>
+    <text class="label-property">℃</text>
+    <button class="upload-btn">温度R</button>
+    <text class="input-things">{{referenceTemperature}} </text>
+    <text class="label-property">℃</text>
+  </view>
+
+  <view class="view-flex-row">
+    <button class="upload-btn">露点:</button>
+    <text class="input-things">{{dewPoint}} </text>
+    <text class="label-property"> ℃</text>
+    <button class="upload-btn">体感:</button>
+    <text class="input-things">{{apparentTemperature}} </text>
+    <text class="label-property">℃</text>
+  </view>
+
+  <view class="view-flex-row">
+    <button class="upload-btn">电流:</button>
+    <text class="input-things">{{current_AC}} </text>
+    <text class="label-property"> A </text>
+    <button class="upload-btn">电压:</button>
+    <text class="input-things">{{votage_AC}} </text>
+    <text class="label-property"> V</text>
+  </view>
+    <view class="view-flex-row">
+    <button class="upload-btn">速度:</button>
+    <text class="input-things">{{speed}} </text>
+    <text class="label-property"> m/s</text>
+    <button class="upload-btn">力:</button>
+    <text class="input-things">{{force}} </text>
+    <text class="label-property">KN</text>
+  </view>
+
+  <view class="view-flex-row" >
+    <view class="view-header">阿里云数据</view>
+  </view>
+
+  <view class="view-flex-row">
+        <button bindtap="thsd_mqtt_On_Off_Line" type="primary" loading="{{searching}}">{{is_MQTT_Connected?"下线":"上线"}} </button>
+        <button  type="primary" bindtap="thsd_MQTT_Post">上报</button>
+        <!-- <button bindtap="thsdHelp">帮助</button> -->
+        <button bindtap="onTouchHelp">帮助</button>
+        <button bindtap="onTouchManual">手动</button>
+  </view>
+ 
+
+  <view style='margin-top: 20rpx;'>
+    <view class='text-log'>
+      <text>上报数据：{{aly_upload_count}} 条</text>
+    </view>
+  </view>  
+</view>

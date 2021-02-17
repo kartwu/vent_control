@@ -1,0 +1,42 @@
+.text-log {
+  word-break: keep-all;
+  word-wrap: break-word;
+  width: 100%;
+  padding: 10rpx 0 0 20rpx;
+  color: #068004;
+  font-size: 11pt;
+}
+
+.text-log-main {
+  word-break: keep-all;
+  word-wrap: break-word;
+  width: 100%;
+  padding: 10rpx 0 0 40rpx;
+  color: #2657c2;
+  font-size: 11pt;
+}
+.upload-btn{
+  display: flex;
+  flex-direction: row;
+  width: 25%;
+  font-weight: bold;
+  color: navy;
+  font-size: 10pt;
+  position: relative;
+}
+
+
+.input-things{
+  color: crimson;
+  font-size: larger;
+  
+}
+.flex-item {
+  width: 33%;
+  color: crimson;
+  font-size: 16pt;
+
+}
+.flex-title{
+  width:33%;
+}

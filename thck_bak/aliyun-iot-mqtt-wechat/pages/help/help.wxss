@@ -1,0 +1,8 @@
+.help-view-flex-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 6rpx;
+  font-size: 12pt;
+  color: dimgray;
+}
