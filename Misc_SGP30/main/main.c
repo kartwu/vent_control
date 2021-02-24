@@ -1,5 +1,6 @@
-/* 210203,尝试整合mqtt_aiot上报数据到本程序
-*/
+/* 210224,今天准备整合ble带UUID的Adv,配合做微信小程序，增加超限蜂鸣器报警（初步设定eCO2报警线2000ppm），安装到其他地方测试。*/
+/*tVoc_base = 0x8cc2; eCO2_base = 0x87b6. */
+/*完成：1、添加UUID。2、添加报警蜂鸣器。3、添加传感器多次读数故障取消报警。4、试验后报警eCO2取值4000。*/
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -42,15 +43,18 @@
 // 数据Charicater "91110106-0627-7460-0002-911101080019"
 
 /* 210214:尝试调试成最简单的ble Write功能，服务于手机微信小程序定期读取*/
-#define DEVICE_NAME "THSD-CK"
+#define DEVICE_NAME "eCO2"
 char formatted_ble_data[100];       //输出到小程序时，使用的组织成JSON格式的数据。
-uint8_t wqj_ble_addr_type;          //flag。程序过程用，不用关心
+uint8_t qb_ble_addr_type;          //flag。程序过程用，不用关心
 void ble_app_advertise(void);       //编译用，提前声明，函数在调用函数的后面。
+uint8_t Num_ble_connected = 0;          //同时ble连接设备的数量，menuconfig设置为max.=3
 // BLE setting end
 
 /*SGP30 settings*/
 #define LED_PIN 22                // 用LED闪烁快慢指示eCO2是否超标(1000ppm)。
+#define buzzer_PIN 16               //连接蜂鸣器
 bool eCO2_Alarm = false;
+uint8_t SGP30_read_error = 0;       //累计传感器读数故障，超过次数就复位读数和报警
 #define NVS_BASE_NAME "storage"
 #define SGP_TVOC_BASE_KEY "SGP_TVOC"
 #define SGP_ECO2_BASE_KEY "SGP_ECO2"
@@ -68,13 +72,13 @@ bool eCO2_Alarm = false;
 /* mqtt_aiot settings */
 xSemaphoreHandle cloudUploadReadySemaphore;         //准备好开始向云端上报数据的Semaphore
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      "66665555" //CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD //"66665555"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY  //尝试重连Wifi最大次数 
 static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 static const char *TAG = "SGP30_Aiot";
-char *product_key       = "a1bdhbK4VTZ";    //三元组，以后在menuconfig中设置
+char *product_key       = "a1bdhbK4VTZ";    //设备名"失败的生活物联网"-三元组，以后在menuconfig中设置
 char *device_name       = "W8QeK6QpTYNQ3ad65alD";
 char *device_secret     = "b44fcf6c61e825929a5d5e6ed611d71e";
 char pub_topic[100];                        //报文topic
@@ -86,6 +90,7 @@ static pthread_t g_mqtt_recv_thread;
 static uint8_t g_mqtt_process_thread_running = 0;
 static uint8_t g_mqtt_recv_thread_running = 0;
 static int s_retry_num = 0;
+static bool is_Wifi_connected = false;
 // mqtt aiot setting end
 
 /* BLE functions start*/
@@ -123,14 +128,21 @@ static const struct ble_gatt_svc_def gat_svcs[] = {
 /*  ble_gap_adv_start 时注册的不同 event 的cb 函数*/
 static int ble_gap_event(struct ble_gap_event *event, void * arg){
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_CONNECT:     //可以是“connected”或“有未遂连接尝试”
         ESP_LOGI("GAP","BLE_GAP_EVENT_CONNECT %s",event->connect.status == 0? "OK":"Failed");
         if(event->connect.status != 0){
             ble_app_advertise();
         }
+        else if(Num_ble_connected < 3){ //允许最多同时连接3个，当连接数小于3时，继续advertise
+            ble_app_advertise();
+            Num_ble_connected++;
+            printf("Num_ble_connected = %d.\n",Num_ble_connected);
+        }
         break;
     case BLE_GAP_EVENT_DISCONNECT:
          ESP_LOGI("GAP","BLE_GAP_EVENT_DISCONNECT");
+         Num_ble_connected--;
+         printf("Num_ble_connected =%d.\n",Num_ble_connected);
          ble_app_advertise();
         break;    
     case BLE_GAP_EVENT_ADV_COMPLETE:
@@ -148,6 +160,7 @@ static int ble_gap_event(struct ble_gap_event *event, void * arg){
 
 /* 开始advertise所需要的设置 单独成函数是为了多次调用*/
 void ble_app_advertise(void){
+    struct ble_gap_adv_params adv_params;   // = (struct ble_gap_adv_params){0};  //?新建adv的参数？
     struct ble_hs_adv_fields fields;
     memset(&fields,0, sizeof(fields) );
     fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_DISC_LTD;
@@ -156,32 +169,51 @@ void ble_app_advertise(void){
     fields.name = (uint8_t *) ble_svc_gap_device_name();
     fields.name_len = strlen(ble_svc_gap_device_name());
     fields.name_is_complete = true;
-    ble_gap_adv_set_fields(&fields);
-    struct ble_gap_adv_params adv_params;   // = (struct ble_gap_adv_params){0};  //?新建adv的参数？
+    /*以下三行增加adv时，包含UUID，目的是其它设备可以通过搜索UUID提高scan的速度，节约资源*/
+    fields.uuids128 = (ble_uuid128_t *)BLE_THSD_SERVICE_UUID;
+    fields.num_uuids128 = 1;
+    fields.uuids128_is_complete = true;
+    int rc = ble_gap_adv_set_fields(&fields);
+    if (rc != 0){
+        ESP_LOGW(__func__,"set fields failed: 0x%4x",rc);
+        return;
+    }
     memset(&adv_params,0,sizeof(adv_params));
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    ble_gap_adv_start(wqj_ble_addr_type, NULL, BLE_HS_FOREVER, &adv_params, ble_gap_event, NULL);
+    ble_gap_adv_start(qb_ble_addr_type, NULL, BLE_HS_FOREVER, &adv_params, ble_gap_event, NULL);
 }
 
 void ble_app_on_sync(void){
-    ble_hs_id_infer_auto(0,&wqj_ble_addr_type);     //自动生成地址类型,不需要关心
+    ble_hs_id_infer_auto(0,&qb_ble_addr_type);     //自动生成地址类型,不需要关心
     ble_app_advertise();
 }
 /* nimble_port_freertos_init 出来的task*/
 void host_task(void *param){
+/* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();      //2
+    nimble_port_freertos_deinit(); //这句应该不会执行到
 }
 /* 把ble 初始化所需步骤整合到一起，简化程序app_main()*/
 void thsd_ble_init(){
-    esp_nimble_hci_and_controller_init();  //HCI: Host Controller Interface
+    int rc;
+    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());  //HCI: Host Controller Interface
     nimble_port_init();
-    ble_svc_gap_device_name_set(DEVICE_NAME);  
+/* Initialize the NimBLE host configuration. */
+    ble_hs_cfg.sync_cb = ble_app_on_sync;  //3.  Bluetooth Host main configuration structure “host stack?"
+/*gatt_svr_init*/
     ble_svc_gap_init();
     ble_svc_gatt_init();
-    ble_gatts_count_cfg(gat_svcs);
-    ble_gatts_add_svcs(gat_svcs);
-    ble_hs_cfg.sync_cb = ble_app_on_sync;  //3.  Bluetooth Host main configuration structure “host stack?"
+    rc = ble_gatts_count_cfg(gat_svcs);
+    if (rc != 0) {
+        ESP_LOGW(__func__,"ble_gatts_count_cfg(gat_svcs) failed.");
+    }
+    rc = ble_gatts_add_svcs(gat_svcs);
+    if (rc != 0) {
+        ESP_LOGW(__func__,"ble_gatts_count_cfg(gat_svcs) failed.");
+    }
+    rc = ble_svc_gap_device_name_set(DEVICE_NAME); 
+    assert(rc == 0); 
     nimble_port_freertos_init(host_task);   //第一步1
 }
 // BLE functions end
@@ -484,42 +516,51 @@ void cloud_Upload(void *params){                        //程序开始云上报t
 }
 /*根据功能变动的程序，在这里组织aiot pub topic&payload，组织BLE read callback 调用的输出*/
 static void sgpTask(void* pvParams) {
+    esp_err_t err;
     for(int i = 0; i < 30; i++){   //开机前15秒数据无效，先执行30秒的开机循环，等待SPG30进入正常工作状态
-            esp_err_t err;
             if((err = sgp30_ReadData()) == ESP_OK) {
-            ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm",
-                     sgp30_Data.tVoC, sgp30_Data.eCO2);
+            ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm", sgp30_Data.tVoC, sgp30_Data.eCO2);
+                     if (SGP30_read_error > 1){
+                         SGP30_read_error --;
+                     }
             } else {
             ESP_LOGE(__func__, "SGP READ ERROR:: 0x%04X", err);
-            }
-            if(sgp30_Data.eCO2 > CONFIG_eCO2_Alarm_PPM){
-                eCO2_Alarm = true;
-            }else
-            {
-            eCO2_Alarm = false;
+            SGP30_read_error ++;
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
         }
     while(true) {
+        /*组织topic和payload，上报阿里云数据*/
         sprintf(pub_topic,"/sys/%s/%s/thing/event/property/post", product_key, device_name); 
         sprintf(pub_payload,"{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"%s\":%d,\"%s\":%d}}","eCO2",sgp30_Data.eCO2,"voc",sgp30_Data.tVoC); //TODO:增加物模型
         ESP_LOGI (__func__, "Pub payload ready. Give semaphore\n");
         xSemaphoreGive(cloudUploadReadySemaphore);
-        for(int i = 0; i < 60 * 30; i++){  //初次上报数据后，每半小时上报一次数据。
-            esp_err_t err;
-            if((err = sgp30_ReadData()) == ESP_OK) {
-            ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm",
-                     sgp30_Data.tVoC, sgp30_Data.eCO2);
-                     sprintf(formatted_ble_data,"{\"tVoC\":%d,\"eCO2\":%d}",sgp30_Data.tVoC, sgp30_Data.eCO2);
-            } else {
+        /* 初次上报数据后，等待并每半小时上报一次数据。*/
+        for(int i = 0; i < 60 * 30; i++){  
+            if((err = sgp30_ReadData()) == ESP_OK) {            //传感器正常，则更新ble数据
+            ESP_LOGI(__func__, "tVoC: %dppb, eCO2: %dppm", sgp30_Data.tVoC, sgp30_Data.eCO2);
+            sprintf(formatted_ble_data,"{\"tVoC\":%d,\"eCO2\":%d}",sgp30_Data.tVoC, sgp30_Data.eCO2);
+                     if (SGP30_read_error != 0){
+                         SGP30_read_error --;
+                     }                     
+            } else {        //传感器不正常，记录不正常次数
             ESP_LOGE(__func__, "SGP READ ERROR:: 0x%04X", err);
+            SGP30_read_error ++;
             }
-            if(sgp30_Data.eCO2 > CONFIG_eCO2_Alarm_PPM){
+            //增加对传感器读数故障的判断
+            if (SGP30_read_error < 10){         //传感器报故障连续累计未超过10次
+                if(sgp30_Data.eCO2 > CONFIG_eCO2_Alarm_PPM ){
                 eCO2_Alarm = true;
-            }else
-            {
-            eCO2_Alarm = false;
+                }else{
+                    eCO2_Alarm = false;
+                }
+            }else{      //怀疑传感器有故障,恢复测量结果默认值,取消报警
+                ESP_LOGW(__func__,"SGP30 read error number exceed limit.");
+                sgp30_Data.eCO2 = 400;
+                sgp30_Data.tVoC = 400;
+                eCO2_Alarm = false;
             }
+            
             vTaskDelay(1000 / portTICK_PERIOD_MS); //为了SGP30能自动修正Baseline，必须每一秒发送一次 “sgp30_measure_iaq”
         }
     }
@@ -590,7 +631,7 @@ static void sgpBaselineTask(void* pvParams) {
         }
     }
 }
-
+/*LED闪烁快慢显示是否有Wifi和Ble设备连接，越快连接数量越多*/
 void HMI(void *params){
       gpio_pad_select_gpio(LED_PIN);
       gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
@@ -600,15 +641,31 @@ void HMI(void *params){
           gpio_set_level(LED_PIN, false);
           LED_Status = false;
         }
-        else
-        {
+        else{
           gpio_set_level(LED_PIN, true);
           LED_Status = true;
         }
-        //ESP_LOGI(__func__, "LED_Status: %d, eCO2_alarm: %d", LED_Status, eCO2_Alarm);
-        vTaskDelay(pdMS_TO_TICKS(2000 / (1 + eCO2_Alarm *3) ));
+        //闪烁速度添加了对外连接和传感器读取故障的累计数（会因为正常而减少到0）
+        vTaskDelay(pdMS_TO_TICKS(2000 / (1 + is_Wifi_connected + Num_ble_connected + SGP30_read_error) ));
       }
 
+}
+/*出现报警情况下间隔两秒响一组*/
+void Buzzer_alarm(void *params){
+      gpio_pad_select_gpio(buzzer_PIN);
+      gpio_set_direction(buzzer_PIN, GPIO_MODE_OUTPUT);
+      while(true){
+          if (eCO2_Alarm){
+              for(int i = 0; i < 5;i++){
+                  gpio_set_level(buzzer_PIN, true);
+                  vTaskDelay(pdMS_TO_TICKS(200));
+                  gpio_set_level(buzzer_PIN,false);
+                  vTaskDelay(pdMS_TO_TICKS(100));
+              }
+              ESP_LOGW(__func__,"eCO2 alarm on!");
+          }
+          vTaskDelay(pdMS_TO_TICKS(2000));
+      }
 }
 
 void app_main() {
@@ -690,6 +747,7 @@ void app_main() {
     xTaskCreate(sgpBaselineTask, "sgpBaselineTask", 4096, NULL, 5, NULL);
     xTaskCreate(cloud_Upload, "cloud_Upload", 1024 * 4, NULL, 5, NULL);
     xTaskCreate(HMI, "HMI", 1024 * 2, NULL, 5, NULL);
+    xTaskCreate(Buzzer_alarm, "buzzer alarm",1024*2 ,NULL,5 ,NULL); //曾经因1024出现assert failure而重启，改成1024*2 后貌似解决了
 
 }
 
