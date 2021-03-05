@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "综合家居监控",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#eeeeee"
+  },
+
+  "sitemapLocation": "sitemap.json"
+}

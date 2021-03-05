@@ -1,0 +1,133 @@
+<!--manual_Test.wxml-->
+<view class="container">
+
+  <view class="view-flex-row" >
+    <view class="view-header">BLE手动终端</view>
+
+  </view>
+  <view class="view-flex-row">
+    <view class ="view-flex-subrow" > 请选择设备：</view>
+    <view class ="view-flex-subrow">
+      <picker-view class="view-subheader" indicator-style="height: 40px;" style="width: 100%; height: 40px;" value="{{value}}"  bindchange="bindpickerChange">
+    <picker-view-column>
+      <view wx:for="{{Device_Type}}" style="line-height: 30px">{{item}}</view>
+    </picker-view-column>
+    </picker-view>
+
+    </view>
+  </view>
+
+
+
+  <view class="view-flex-row">
+    <button bindtap="thsd_ble_On_Off" type="primary" class ="view-button" loading="{{searching}}">{{is_ble_connected?"断开 BLE 设备:":" 搜索 BLE 设备:"}}</button>
+    <button  type="warn" class="view-button" >{{selected_Device_Type_Name}}</button>
+  </view>
+
+  <view class="view-flex-row">
+      <button  bindtap="toggleReadBLEData" type="primary" class="view-button" >{{is_Start_Data_Read?"停止读取数据":"开始读取数据"}}</button>
+      <button bindtap="toggle_Control_BLE" type ="primary" class="view-button">{{is_Start_Realtime_Control? "停止实时控制":"开始实时控制"}} </button>
+
+  </view>  
+
+<!--        <button bindtap="thsdBLESend" type="primary" class ="view-button">发送特征指令</button>
+  
+  <view class="view-flex-row">
+
+        <button bindtap="stopReadBLEData">停止测量</button>
+  </view> -->
+
+  <view class = "view-flex-row">
+    <view style = "width: 60%; height: 40px;">
+      <view style="flex-direction:column;">
+        <view class = "view-flex-row">
+          <input bindinput="bind_Input_SSID" placeholder="输入Wifi SSID >3字符"/>
+        </view>
+        <view class = "view-flex-row">
+          <input bindinput="bind_Input_Pass" placeholder="输入Password >6字符"/>
+        </view>
+      </view>
+    </view>
+
+    <view style = "width: 40%; height: 40px;">
+      <button bindtap="qbdz_ble_send" type="primary">更新Wifi信息</button>
+    </view>
+  </view>
+
+  <view class="view-flex-row" >
+    <view class="view-header">结果显示</view>
+  </view>
+
+  <view class="view-flex-row" style="flex-direction:row;">
+     <view  class="flex-title" style="flex-direction:column">
+      <view>项目</view>
+    </view>
+    <view  class="flex-title" style="flex-direction:column">
+      <view>数值</view>
+    </view>
+    <view  class="flex-title" style="flex-direction:column">
+      <view>单位</view>
+    </view>
+  </view>
+
+<!-- 显示五个可能接收到的检测参数 -->
+  <view class="view-flex-row">  
+    <text class="flex-item" >{{display_Result[0].name}}</text>
+    <text class="flex-item" >{{display_Result[0].value}}</text>
+    <text class="flex-item">{{display_Result[0].unit}}</text>
+  </view>
+
+
+  <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[1].name}}</text>
+    <text class="flex-item">{{display_Result[1].value}}</text>
+    <text class="flex-item">{{display_Result[1].unit}}</text>
+  </view>
+
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[2].name}}</text>
+    <text class="flex-item">{{display_Result[2].value}}</text>
+    <text class="flex-item">{{display_Result[2].unit}}</text>
+  </view>
+
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[3].name}}</text>
+    <text class="flex-item">{{display_Result[3].value}}</text>
+    <text class="flex-item">{{display_Result[3].unit}}</text>
+  </view>
+   <view class="view-flex-row">  
+    <text class="flex-item">{{display_Result[4].name}}</text>
+    <text class="flex-item">{{display_Result[4].value}}</text>
+    <text class="flex-item">{{display_Result[4].unit}}</text>
+  </view>
+
+
+
+
+  <view class="view-flex-row">
+       <view style="width: 80%; height: 40px;">
+           <text >设置(0~100)</text>
+           <view>
+               <slider bindchanging="sliderchanging" min="0" max="100" show-value/>
+           </view>
+       </view>
+   </view>
+
+  <view class="view-flex-row" >
+    <view class="view-header">阿里云数据</view>
+  </view>
+
+
+  <view class="view-flex-row">
+        <button bindtap="thsd_mqtt_On_Off_Line" type="primary" loading="{{searching}}">{{is_MQTT_Connected?"下线":"上线"}} </button>
+        <button  type="primary" bindtap="thsd_MQTT_Post">上报</button>
+        <button bindtap="onTouchHelp">帮助</button>
+  </view>
+ 
+
+  <view style='margin-top: 20rpx;'>
+    <view class='text-log'>
+      <text>上报数据：{{aly_upload_count}} 条</text>
+    </view>
+  </view>  
+</view>
