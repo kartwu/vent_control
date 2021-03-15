@@ -20,13 +20,20 @@
 
 
   <view class="view-flex-row">
-    <button bindtap="thsd_ble_On_Off" type="primary" class ="view-button" loading="{{searching}}">{{is_ble_connected?"断开 BLE 设备:":" 搜索 BLE 设备:"}}</button>
-    <button  type="warn" class="view-button" >{{selected_Device_Type_Name}}</button>
+    <view style="flex-direction:column;">
+    <button bindtap="thsd_ble_On_Off" type="primary"  loading="{{searching}}">{{is_ble_connected?"断开 BLE 设备:":" 搜索 BLE 设备:"}}</button>
+</view>
+
+    <button  type="warn"  >{{selected_Device_Type_Name}}</button>
   </view>
 
   <view class="view-flex-row">
-      <button  bindtap="toggleReadBLEData" type="primary" class="view-button" >{{is_Start_Data_Read?"停止读取数据":"开始读取数据"}}</button>
-      <button bindtap="toggle_Control_BLE" type ="primary" class="view-button">{{is_Start_Realtime_Control? "停止实时控制":"开始实时控制"}} </button>
+ 
+    <view style="flex-direction:column;">
+      <button  bindtap="toggleReadBLEData" type="primary"  >{{is_Start_Data_Read?"停止读取数据":"开始读取数据"}}</button>
+    </view>
+
+     
 
   </view>  
 
@@ -37,22 +44,6 @@
         <button bindtap="stopReadBLEData">停止测量</button>
   </view> -->
 
-  <view class = "view-flex-row">
-    <view style = "width: 60%; height: 40px;">
-      <view style="flex-direction:column;">
-        <view class = "view-flex-row">
-          <input bindinput="bind_Input_SSID" placeholder="输入Wifi SSID >3字符"/>
-        </view>
-        <view class = "view-flex-row">
-          <input bindinput="bind_Input_Pass" placeholder="输入Password >6字符"/>
-        </view>
-      </view>
-    </view>
-
-    <view style = "width: 40%; height: 40px;">
-      <button bindtap="qbdz_ble_send" type="primary">更新Wifi信息</button>
-    </view>
-  </view>
 
   <view class="view-flex-row" >
     <view class="view-header">结果显示</view>
@@ -101,7 +92,17 @@
     <text class="flex-item">{{display_Result[4].unit}}</text>
   </view>
 
+<view class="view-flex-row" >
 
+  <view style="flex-direction:column;">
+    <button bindtap="toggle_Control_BLE" type ="primary" >{{is_Start_Realtime_Control? "停止实时控制":"开始实时控制"}} </button>
+  </view>
+  <view style=" flex-direction: colume; width:20%">
+  </view>
+  <view style="flex-direction:column;">
+    <button bindtap="canvas_Control" type ="primary" >切换到控制页 </button>
+  </view>
+</view>
 
 
   <view class="view-flex-row">
@@ -112,6 +113,47 @@
            </view>
        </view>
    </view>
+   <view class="view-flex-row">
+       <view style="width: 80%; height: 20px;">
+       </view>
+   </view>
+
+
+   <view class = "view-flex-row">
+    <view style = "width: 60%; height: 40px;">
+      <view class = "view-flex-row">
+          <input bindinput="bind_Input_Info" placeholder="输入信息"/>
+        </view>
+    </view> 
+        <view style = "width: 40%; height: 40px;">
+      <button bindtap="qbdz_ble_send_info" type="primary">发送信息</button>
+    </view>
+  </view>
+
+  <view class="view-flex-row">
+       <view style="width: 80%; height: 20px;">
+       </view>
+   </view>
+   
+   <view class = "view-flex-row">
+    <view style = "width: 60%; height: 40px;">
+      <view style="flex-direction:column;">
+        <view class = "view-flex-row">
+          <input bindinput="bind_Input_SSID" placeholder="输入Wifi SSID >3字符"/>
+        </view>
+        <view class = "view-flex-row">
+          <input bindinput="bind_Input_Pass" placeholder="输入Password >6字符"/>
+        </view>
+      </view>
+    </view>
+
+    <view style = "width: 40%; height: 40px;">
+      <button bindtap="qbdz_ble_send_wifi" type="primary">更新Wifi信息</button>
+    </view>
+  </view>
+<!-- 显示五个可能接收到的检测参数
+
+
 
   <view class="view-flex-row" >
     <view class="view-header">阿里云数据</view>
@@ -130,4 +172,5 @@
       <text>上报数据：{{aly_upload_count}} 条</text>
     </view>
   </view>  
+   -->
 </view>

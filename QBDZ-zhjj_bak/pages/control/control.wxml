@@ -1,0 +1,14 @@
+
+<view class="view-flex-row" >
+  <button bindtap="thsd_ble_On_Off" type="primary"  loading="{{searching}}">{{is_ble_connected?"停止控制，断开 BLE 设备:":" 搜索 BLE 设备:"}}</button>
+</view>
+<view>
+  <canvas canvas-id="myCanvas"
+  style="margin: 5px; border:1px solid #d3d3d3;"
+  style="width: 320px; height: 500px;"
+  bindtouchstart="start"
+  bindtouchmove="move"
+  bindtouchend="end"/>
+
+</view>
+

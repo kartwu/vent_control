@@ -40,10 +40,11 @@ Page({
   data: {
       input_Wifi_SSID:null,
       input_Wifi_PassWord:null,
+      input_info:null,
 
       alarm_Setting: 0,       //从滑条取出的设置值，是发送到 prepheral 的参数
-      Device_Type: [ 'QBDZ','可选设备','eCO2','客厅','设备间'],
-      selected_Device_Type_Name: 'QBDZ',
+      Device_Type: [ 'YLX-B','QBDZ','可选设备','设备间'],
+      selected_Device_Type_Name: 'YLX-B',
       // BLE Data
       THSD_SERVICE_UUID:"91110106-0627-7460-1000-911101080019",        //自定义专用 UUID
       THSD_CHAR_DATA_UUID:"91110106-0627-7460-0002-911101080019",   //自定义专用 UUID
@@ -89,6 +90,18 @@ Page({
   onShow: function () {
     
   },
+  /***切换到Canvas 控制页 */
+  canvas_Control:function(e){
+    wx.redirectTo({
+      url: '../control/control',
+    })
+  },
+  /***获取对ble设备更新的新 Wifi SSID */
+    bind_Input_Info:function(e){
+      this.setData({
+        input_info: e.detail.value
+      })
+    },
   /***获取对ble设备更新的新 Wifi SSID */
   bind_Input_SSID:function(e){
     this.setData({
@@ -240,7 +253,7 @@ startBluetoothDevicesDiscovery() {
   }
   this._discoveryStarted = true
   wx.startBluetoothDevicesDiscovery({
-    services:[this.data.THSD_SERVICE_UUID], //为节约资源和调试方便，只查找本小程序指定的UUID的BLE。
+    //services:[this.data.THSD_SERVICE_UUID], //为节约资源和调试方便，只查找本小程序指定的UUID的BLE。
     allowDuplicatesKey: false,     // true 允许多次发现会重复调用 wx.onBluetoothDeviceFound。经测试没有意义
     success: (res) => {
       console.log("start bT discovery OK.",res)
@@ -260,7 +273,7 @@ startBluetoothDevicesDiscovery() {
     }
   })
 },
-/*** 如果找到制定SERVICE UUID的device，到这里*/
+/*** 如果找到device（指定SERVICE UUID的要求因 set fields最多31 bytes 不够用，暂时取消），到这里*/
 onBluetoothDeviceFound() {      
   wx.onBluetoothDeviceFound((res) => { 
     console.log("discovery get device.")
@@ -437,17 +450,68 @@ thsdParseInput: function(newReceivedText){
 
 
 },
-/***发送 ble characteristic的指令,更新Wifi cred（或其它单次发送指令） */
-qbdz_ble_send:function(){
-console.log("to write ble characeristc")
-if(this.data.input_Wifi_SSID.length >= 3 && this.data.is_ble_connected ){
-  var text_ToSend = this.data.input_Wifi_SSID;
-  var buffer = new ArrayBuffer(text_ToSend.length + 2);
+/***发送 ble characteristic的指令,更新Wifi cred */
+qbdz_ble_send_wifi:function(){
+  console.log("to try write ble characeristc WIFI cred.")
+  if(this.data.input_Wifi_SSID != null){
+  if(this.data.input_Wifi_SSID.length >= 3 && this.data.is_ble_connected ){
+    var text_ToSend = this.data.input_Wifi_SSID;
+    var buffer = new ArrayBuffer(text_ToSend.length + 2);
+    let text_ToSend_Uint8_view = new Uint8Array(buffer);
+    for (let i =0; i < text_ToSend.length ; i++){
+      text_ToSend_Uint8_view[i+1] = text_ToSend.charCodeAt(i);
+    }
+    text_ToSend_Uint8_view[0] = 0x81;
+    wx.writeBLECharacteristicValue({
+      deviceId:this.data.thsd_DeviceId,
+      serviceId:this.data.THSD_SERVICE_UUID,
+      characteristicId:this.data.THSD_CHAR_COMMAND_UUID,
+      value: buffer,
+      success (res) {
+        console.log('writeBLECharacteristicValue success', res.errMsg)
+      },
+      fail (res){
+        console.log('writeBLECharacteristicValue success', res.errMsg)
+      }
+    })
+  }
+  }
+  if(this.data.input_Wifi_PassWord != null){
+  if(this.data.input_Wifi_PassWord.length >= 3 && this.data.is_ble_connected ){
+    var text_ToSend = this.data.input_Wifi_PassWord;
+    var buffer = new ArrayBuffer(text_ToSend.length + 2);
+    let text_ToSend_Uint8_view = new Uint8Array(buffer);
+    for (let i =0; i < text_ToSend.length ; i++){
+      text_ToSend_Uint8_view[i+1] = text_ToSend.charCodeAt(i);
+    }
+    text_ToSend_Uint8_view[0] = 0x82;
+    wx.writeBLECharacteristicValue({
+      deviceId:this.data.thsd_DeviceId,
+      serviceId:this.data.THSD_SERVICE_UUID,
+      characteristicId:this.data.THSD_CHAR_COMMAND_UUID,
+      value: buffer,
+      success (res) {
+        console.log('writeBLECharacteristicValue success', res.errMsg)
+      },
+      fail (res){
+        console.log('writeBLECharacteristicValue success', res.errMsg)
+      }
+    })
+  }
+  }
+},
+/***发送 ble characteristic的信息指令,单次发送指令 */
+qbdz_ble_send_info:function(){
+console.log("to try write ble characeristc info")
+if(this.data.input_info != null){
+if(this.data.input_info.length > 0 && this.data.is_ble_connected ){
+  var text_ToSend = this.data.input_info;
+  var buffer = new ArrayBuffer(text_ToSend.length + 1);
   let text_ToSend_Uint8_view = new Uint8Array(buffer);
   for (let i =0; i < text_ToSend.length ; i++){
-    text_ToSend_Uint8_view[i+1] = text_ToSend.charCodeAt(i);
+    text_ToSend_Uint8_view[i] = text_ToSend.charCodeAt(i);
   }
-  text_ToSend_Uint8_view[0] = 0x81;
+  //text_ToSend_Uint8_view[0] = 0x81;
   wx.writeBLECharacteristicValue({
     deviceId:this.data.thsd_DeviceId,
     serviceId:this.data.THSD_SERVICE_UUID,
@@ -461,30 +525,7 @@ if(this.data.input_Wifi_SSID.length >= 3 && this.data.is_ble_connected ){
     }
   })
 }
-if(this.data.input_Wifi_PassWord.length >= 3 && this.data.is_ble_connected ){
-  var text_ToSend = this.data.input_Wifi_PassWord;
-  var buffer = new ArrayBuffer(text_ToSend.length + 2);
-  let text_ToSend_Uint8_view = new Uint8Array(buffer);
-  for (let i =0; i < text_ToSend.length ; i++){
-    text_ToSend_Uint8_view[i+1] = text_ToSend.charCodeAt(i);
-  }
-  text_ToSend_Uint8_view[0] = 0x82;
-  wx.writeBLECharacteristicValue({
-    deviceId:this.data.thsd_DeviceId,
-    serviceId:this.data.THSD_SERVICE_UUID,
-    characteristicId:this.data.THSD_CHAR_COMMAND_UUID,
-    value: buffer,
-    success (res) {
-      console.log('writeBLECharacteristicValue success', res.errMsg)
-    },
-    fail (res){
-      console.log('writeBLECharacteristicValue success', res.errMsg)
-    }
-  })
 }
-
-
-
 },
 /*** 被循环调用的发送 ble characteristic的指令 */
 qbdz_ble_control_send: function(){
@@ -547,99 +588,99 @@ onTouchHelp:function(event){
     参考文档：https://help.aliyun.com/document_detail/73742.html?#h2-url-1
   */
 
- doConnect() {
-  var that = this;
-  const options = this.initMqttOptions(deviceConfig);
+//  doConnect() {
+//   var that = this;
+//   const options = this.initMqttOptions(deviceConfig);
 
-  console.log(options)
-  client = mqtt.connect('wxs://productKey.iot-as-mqtt.cn-shanghai.aliyuncs.com', options)
-  client.on('connect', function () {
-    console.log('连接服务器成功')
-    wx.showToast({
-      title: '上线成功',
-      icon:"none",
-      duration:500
-    })
-    that.setData({
-     is_MQTT_Connected:true 
-    })
-  })
-},
+//   console.log(options)
+//   client = mqtt.connect('wxs://productKey.iot-as-mqtt.cn-shanghai.aliyuncs.com', options)
+//   client.on('connect', function () {
+//     console.log('连接服务器成功')
+//     wx.showToast({
+//       title: '上线成功',
+//       icon:"none",
+//       duration:500
+//     })
+//     that.setData({
+//      is_MQTT_Connected:true 
+//     })
+//   })
+// },
 
   //IoT平台mqtt连接参数初始化
-  initMqttOptions(deviceConfig) {
-    const params = {
-      productKey: deviceConfig.productKey,
-      deviceName: deviceConfig.deviceName,
-      timestamp: Date.now(),
-      clientId: Math.random().toString(36).substr(2),
-    }
-    //CONNECT参数
-    const options = {
-      keepalive: 60, //60s
-      clean: true, //cleanSession不保持持久会话
-      protocolVersion: 4 //MQTT v3.1.1
-    }
-    //1.生成clientId，username，password
-    options.password = this.signHmacSha1(params, deviceConfig.deviceSecret);
-    options.clientId = `${params.clientId}|securemode=2,signmethod=hmacsha1,timestamp=${params.timestamp}|`;
-    options.username = `${params.deviceName}&${params.productKey}`;
+  // initMqttOptions(deviceConfig) {
+  //   const params = {
+  //     productKey: deviceConfig.productKey,
+  //     deviceName: deviceConfig.deviceName,
+  //     timestamp: Date.now(),
+  //     clientId: Math.random().toString(36).substr(2),
+  //   }
+  //   //CONNECT参数
+  //   const options = {
+  //     keepalive: 60, //60s
+  //     clean: true, //cleanSession不保持持久会话
+  //     protocolVersion: 4 //MQTT v3.1.1
+  //   }
+  //   //1.生成clientId，username，password
+  //   options.password = this.signHmacSha1(params, deviceConfig.deviceSecret);
+  //   options.clientId = `${params.clientId}|securemode=2,signmethod=hmacsha1,timestamp=${params.timestamp}|`;
+  //   options.username = `${params.deviceName}&${params.productKey}`;
 
-    return options;
-  },
-  signHmacSha1(params, deviceSecret) {
-    let keys = Object.keys(params).sort();
-    // 按字典序排序
-    keys = keys.sort();
-    const list = [];
-    keys.map((key) => {
-      list.push(`${key}${params[key]}`);
-    });
-    const contentStr = list.join('');
-    return crypto.hex_hmac_sha1(deviceSecret, contentStr);
-  },
+  //   return options;
+  // },
+  // signHmacSha1(params, deviceSecret) {
+  //   let keys = Object.keys(params).sort();
+  //   // 按字典序排序
+  //   keys = keys.sort();
+  //   const list = [];
+  //   keys.map((key) => {
+  //     list.push(`${key}${params[key]}`);
+  //   });
+  //   const contentStr = list.join('');
+  //   return crypto.hex_hmac_sha1(deviceSecret, contentStr);
+  // },
 
 /////上报数据
-thsd_MQTT_Post:function(){
-  var that = this;
-  //如果已经“上线”，循环检查显示数据的数组，如果数组中 value 不是初始值 “”，则判断为该数据有效。按阿里云格式组织数据，并上报数据
+// thsd_MQTT_Post:function(){
+//   var that = this;
+//   //如果已经“上线”，循环检查显示数据的数组，如果数组中 value 不是初始值 “”，则判断为该数据有效。按阿里云格式组织数据，并上报数据
 
-  if(that.data.is_MQTT_Connected) {
+//   if(that.data.is_MQTT_Connected) {
 
-    for(let i =0; i< this.data.display_Result.length; i++ ){
-        if(this.data.display_Result[i].value != "" ){
-          console.log(this.data.display_Result[i].value)
-        let topic = `/sys/${deviceConfig.productKey}/${deviceConfig.deviceName}/thing/event/property/post`;
-        // 注意用`符号，不是' ！！！！！
-        let JSONdata = this.getPostData(i)
-        console.log("===postData\n topic=" + topic)
-        console.log("payload=" + JSONdata)
-        client.publish(topic, JSONdata)
-        let temp_Count = this.data.aly_upload_count + 1;
-        this.setData({aly_upload_count:temp_Count})
-        }
-      }
-    }
-  else{
-    wx.showToast({
-      title: '离线或无有效数据',
-      icon:"none",
-      duration:500
-    })
-  }
-},
+//     for(let i =0; i< this.data.display_Result.length; i++ ){
+//         if(this.data.display_Result[i].value != "" ){
+//           console.log(this.data.display_Result[i].value)
+//         let topic = `/sys/${deviceConfig.productKey}/${deviceConfig.deviceName}/thing/event/property/post`;
+//         // 注意用`符号，不是' ！！！！！
+//         let JSONdata = this.getPostData(i)
+//         console.log("===postData\n topic=" + topic)
+//         console.log("payload=" + JSONdata)
+//         client.publish(topic, JSONdata)
+//         let temp_Count = this.data.aly_upload_count + 1;
+//         this.setData({aly_upload_count:temp_Count})
+//         }
+//       }
+//     }
+//   else{
+//     wx.showToast({
+//       title: '离线或无有效数据',
+//       icon:"none",
+//       duration:500
+//     })
+//   }
+// },
 
 ///////这部分程序仅上报三项指标，以后开发再按照合理逻辑，逐步添加其它指标
- getPostData: function(index) {
-  var payload_Params = `{"${this.data.display_Result[index].ALY_Property_Name}":${this.data.display_Result[index].value}}`
-  var payload_Params_JSON = JSON.parse(payload_Params)
-  const payloadJson = {
-    id: Date.now(),
-    params: payload_Params_JSON,
-    method: "thing.event.property.post"
-  }
-  return JSON.stringify(payloadJson);
-},
+//  getPostData: function(index) {
+//   var payload_Params = `{"${this.data.display_Result[index].ALY_Property_Name}":${this.data.display_Result[index].value}}`
+//   var payload_Params_JSON = JSON.parse(payload_Params)
+//   const payloadJson = {
+//     id: Date.now(),
+//     params: payload_Params_JSON,
+//     method: "thing.event.property.post"
+//   }
+//   return JSON.stringify(payloadJson);
+// },
 
 
   /**
@@ -689,3 +730,33 @@ thsd_MQTT_Post:function(){
 
   }
 })
+/*
+onLoad:function(){
+  var filtered_x =0 
+  var sample_Sum = 0
+  var sample_Number = 5
+  var x =[] 
+   console.log(x)
+   for (let i =0; i< sample_Number; i++){
+      x[i]=0
+    }
+  //   console.log(x) 
+  wx.startAccelerometer({
+    interval: 'normal',
+    success: (res) => {},
+    fail: (res) => {},
+    complete: (res) => {},
+  })
+  wx.onAccelerometerChange((result) => {
+    sample_Sum += result.x 
+    sample_Sum -= x[0] 
+    filtered_x = sample_Sum /sample_Number
+    console.log(filtered_x)
+    for (let i =0; i< (sample_Number-1); i++){
+      x[i]=x[i+1]
+    }
+    x[(sample_Number-1)]= result.x
+
+     
+     //console.log(result.x)
+    }) */
