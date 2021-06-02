@@ -1,0 +1,129 @@
+<mxfile host="app.diagrams.net" modified="2021-06-02T07:00:39.776Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36" etag="VJGzqKsr6l2CY6qRIn5c" version="14.6.13" type="github">
+  <diagram id="dB-fwG9aZdvf-cNRvSWt" name="Page-1">
+    <mxGraphModel dx="1662" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-1" value="" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="630" y="40" width="230" height="680" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-3" value="" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="330" y="170" width="230" height="550" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-4" value="" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="940" y="40" width="215" height="605.26" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-5" value="" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="30" y="102.5" width="246.23" height="544.92" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-6" value="Left/Right " style="shape=process;whiteSpace=wrap;align=center;verticalAlign=middle;size=0.0475;fontStyle=1;strokeWidth=3;fillColor=#FFCCCC" vertex="1" parent="1">
+          <mxGeometry x="30" y="745" width="1470" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-7" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center ; text-decoration: underline&quot;&gt;&lt;strong&gt;&lt;strong&gt;Task&lt;/strong&gt;&amp;nbsp;main&lt;br&gt;&lt;/strong&gt;&lt;/p&gt;&lt;hr&gt;&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="65" y="652.5" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="x7cmtEvMoDBxgf2Opuqi-9">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="153" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-9" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;Create Task Wifi_OTA&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="42.089999999999996" y="270" width="222.04" height="66.87" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-10" value="&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;u&gt;task Normal_Program&lt;/u&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="372.51000000000005" y="650" width="169.18" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-11" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;Creat Normal_Program task&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="41.689999999999976" y="154.3" width="227.49" height="68.2" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-12" value="&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;u&gt;OTA_WIFI_Event_handler&lt;/u&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="970" y="672.68" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-13" value="Case: Wifi_Event_Sta_Start&lt;br&gt;wifi_connect()" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="957.5" y="550" width="180" height="90.26" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-48" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.996;entryY=0.528;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="x7cmtEvMoDBxgf2Opuqi-14" target="x7cmtEvMoDBxgf2Opuqi-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-14" value="Case:Wifi_Event_Disconnect()&lt;br&gt;&lt;br&gt;EventGroupSetbits:&lt;br&gt;OTA_WIFI_FAILED" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="957.5" y="436.25" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-15" value="" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="957.5" y="60" width="180" height="340" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-16" value="&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;u&gt;OTA_WIFI_PU&lt;/u&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 8px&quot;&gt;&lt;u&gt;&amp;nbsp;task&lt;/u&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="672.51" y="655" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-50" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="x7cmtEvMoDBxgf2Opuqi-22" target="x7cmtEvMoDBxgf2Opuqi-45">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="400" />
+              <mxPoint x="590" y="556" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-22" value="EventGroupWaitBits&lt;br&gt;(OTA_Wifi_failed, OTA_Failed)" style="rhombus;whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="630" y="350" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-23" value="OTA_Wifi_Event Handler register(Wifi_EVENT, IP_EVENT)" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="641.05" y="560" width="200" height="41.92" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-28" value="TaskDelete" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="645.0000000000001" y="166.16" width="200" height="44.48" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-29" value="EventGroupsetbits&lt;br&gt;(OTA_Wifi_Complete)" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="645" y="293.12" width="200" height="43.75" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-34" value="&lt;div style=&quot;color: rgb(212 , 212 , 212) ; background-color: rgb(30 , 30 , 30) ; font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; font-size: 14px ; line-height: 19px&quot;&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;&lt;div style=&quot;line-height: 19px&quot;&gt;wifi_init&lt;/div&gt;&lt;div style=&quot;line-height: 19px&quot;&gt;netif&lt;/div&gt;&lt;div style=&quot;line-height: 19px&quot;&gt;default_loop&lt;/div&gt;&lt;div style=&quot;line-height: 19px&quot;&gt;nvs_flash_init()&lt;/div&gt;&lt;/div&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;xEventGroupCreate()&lt;/div&gt;&lt;/div&gt;&lt;div style=&quot;font-family: &amp;#34;consolas&amp;#34; , &amp;#34;courier new&amp;#34; , monospace ; line-height: 19px&quot;&gt;esp_vfs_spiffs_register&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="41.69" y="420" width="222.04" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-35" value="Wifi_config( OTA Wifi SSID &amp;amp; Psss" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="641.05" y="510" width="200" height="41.92" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-36" value="Wifi_start()" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="641.05" y="460" width="200" height="32.5" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-37" value="Wifi_disconnect()&lt;br&gt;Wifi_stop()" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="645" y="226.25" width="200" height="43.75" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-39" value="Case: IP_Eventt_Sta_Got_IP&lt;br&gt;&lt;br&gt;esp_https_ota()" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="966.25" y="330" width="162.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.905;entryY=1.025;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="x7cmtEvMoDBxgf2Opuqi-40" target="x7cmtEvMoDBxgf2Opuqi-42">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1176.25" y="290.9200000000001" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1117" y="291" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-40" value="OTA() ==OK" style="rhombus;whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="966.25" y="260" width="130" height="61.84" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-49" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="x7cmtEvMoDBxgf2Opuqi-41" target="x7cmtEvMoDBxgf2Opuqi-22">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="220" />
+              <mxPoint x="880" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-41" value="EventGroupSetbits:&lt;br&gt;OTA_FAILED" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="966.25" y="190" width="143.75" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-42" value="restart()" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="970" y="102.5" width="162.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-45" value="EventGroupWaitBits&lt;br&gt;(OTA_Complete)" style="rhombus;whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="530.96" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-46" value="Start normal program tasks&lt;br&gt;(esp_now, GPIO, I2C, PWM, HMI etc.)" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="345" y="410" width="200" height="82.5" as="geometry" />
+        </mxCell>
+        <mxCell id="x7cmtEvMoDBxgf2Opuqi-47" value="TaskDelete" style="whiteSpace=wrap;html=1;rounded=1;strokeWidth=2;arcSize=14;align=left;" vertex="1" parent="1">
+          <mxGeometry x="345.0000000000001" y="336.87" width="200" height="44.48" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
